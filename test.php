@@ -4,6 +4,7 @@ require 'wp-php/Site.php';
 require 'wp-php/Object.php';
 require 'wp-php/Post.php';
 require 'wp-php/Term.php';
+require 'wp-php/PostTerms.php';
 require 'wp-php/Exception.php';
 header("Content-Type: text/html; charset=utf-8");
 
@@ -44,10 +45,10 @@ try {
     //Create category
     $category = new Wordpress_Term($wordpress);
     $category->taxonomy = Wordpress_Term::TYPE_CATEGORY;
-    $category->name = 'hello world '.  mt_rand();
+    $category->name = 'hello world ' . mt_rand();
     $category->save();
     echo "<p>Category created: $category->name (slug: $category->slug, id: $category->term_id)</p>";
-    
+
     $post = new Wordpress_Post($wordpress);
     $post->post_type = Wordpress_Post::TYPE_POST;
     $post->post_status = Wordpress_Post::STATUS_PUBLISHED;
@@ -57,19 +58,28 @@ try {
         array('key' => 'custom1', 'value' => 'value1'),
         array('key' => 'custom2', 'value' => 'value2')
     );
-    $post->terms = array($category);
+    $post->terms->add($category);
+    $post->terms->add_tag('hello');
+    $world_tag = $post->terms->add_tag('world');
     $post->save();
     echo "<p>Post created: <a href='$post->link'>$post->post_title (ID $post->post_id)</a></p>";
 
     $post->post_title = 'Hello world, again!';
     $post->post_content = 'New content edited from PHP';
+    $post->terms->add_category('other category', 'Other category created from PHP');
+    $post->terms->add_tag('other tag');
+    $post->terms->delete($post->terms->find_by_name('world'));
     $post->save();
 
     echo "<p>Post edited: <a href='$post->link'>$post->post_title (ID $post->post_id)</a></p>";
 
-    $category->delete();
+    //Delete everything created
+    foreach ($post->terms->all() as $term) {
+        $term->delete();
+    }
+    $world_tag->delete();
     $post->delete();
-    echo "<p>Post deleted and category deleted</a></p>";
+    echo "<p>All created objects deleted</a></p>";
 } catch (Wordpress_Exception $exception) {
     echo '<h2 style="color:darkred">Wordpress Error!</h2><p>', $exception, '</p>';
 } catch (Exception $exception) {

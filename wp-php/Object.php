@@ -15,15 +15,19 @@ abstract class Wordpress_Object {
 
         //Load data content into this object
         if (isset($data)) {
-            $this->_load($data);
+            $this->_data = $data;
         }
     }
-    
-    protected function _load($data){
-            $this->_data = $data;
+
+    /**
+     * Get the site owner of this object
+     * @return Wordpress_Site
+     */
+    public function site() {
+        return $this->_site;
     }
-    
-    protected function _filter($data){
+
+    protected function _filter($data) {
         return $data;
     }
 
@@ -53,6 +57,12 @@ abstract class Wordpress_Object {
     }
 
     /**
+     * Gets a value that indicate if the current object is new
+     * @return boolean
+     */
+    public abstract function is_new();
+
+    /**
      * Save the changes made to the current object
      */
     public abstract function save();
@@ -62,8 +72,8 @@ abstract class Wordpress_Object {
         foreach ($this->_changed as $property) {
             $content[$property] = $this->$property;
         }
-      $content=  $this->_filter($content);
-      
+        $content = $this->_filter($content);
+
         if (!isset($this->$id_field)) {
             //Create
             $id = $this->_site->_query($new_method, $content);

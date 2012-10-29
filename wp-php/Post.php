@@ -26,7 +26,7 @@
  * @property string $ping_status
  * @property bool $sticky
  * @property struct $post_thumbnail See wp.getMediaItem.
- * @property Wordpress_Term[] $terms
+ * @property Wordpress_PostTerms $terms
  * @property array $custom_fields
  * @property array $enclosure
  */
@@ -39,31 +39,26 @@ class Wordpress_Post extends Wordpress_Object {
     const STATUS_DRAFT = 'draft';
     const STATUS_DELETED = 'deleted';
 
-    protected function _load($data) {
-        if (isset($data['terms'])) {
-            $terms = array();
-            foreach ($data['terms'] as $term_data) {
-                $terms[] = new Wordpress_Term($this->_site, $term_data);
-            }
-            $data['terms'] = $terms;
-        }
-        parent::_load($data);
+    public function __construct(Wordpress_Site $site, $data = NULL) {
+        parent::__construct($site, $data);
+
+        $this->terms = new Wordpress_PostTerms($this, isset($data['terms']) ? $data['terms'] : array());
+        $this->_changed = array();
     }
 
     protected function _filter($data) {
         if (isset($data['terms'])) {
-            $terms = array();
-            foreach ($data['terms'] as $term) {
-                if (!$term instanceof Wordpress_Term)
-                    throw new InvalidArgumentException('The post terms should be an array of Wordpress_Term object');
-                if (!isset($terms[$term->taxonomy]))
-                    $terms[$term->taxonomy] = array();
-                $terms[$term->taxonomy][] = $term->term_id;
-            }
-            $data['terms'] = $terms;
+            if (!($data['terms'] instanceof Wordpress_PostTerms))
+                throw new InvalidArgumentException('The post terms should be a Wordpress_PostTerms object');
+
+            $data['terms'] = $data['terms']->serialize();
         }
 
         return parent::_filter($data);
+    }
+
+    public function is_new() {
+        return empty($this->post_id);
     }
 
     /**
@@ -71,6 +66,9 @@ class Wordpress_Post extends Wordpress_Object {
      * @return boolean
      */
     public function delete() {
+        if ($this->is_new())
+            return TRUE;
+        
         return $this->_site->_query('wp.deletePost', $this->post_id);
     }
 
@@ -80,6 +78,9 @@ class Wordpress_Post extends Wordpress_Object {
      */
     public function save() {
         $new = empty($this->post_id);
+
+        if ($this->terms->changed())
+            $this->_changed[] = 'terms';
 
         $success = $this->_save('wp.newPost', 'wp.editPost', 'post_id');
 

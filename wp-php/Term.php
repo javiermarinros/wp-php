@@ -19,11 +19,18 @@ class Wordpress_Term extends Wordpress_Object {
     const TYPE_CATEGORY = 'category';
     const TYPE_TAG = 'post_tag';
 
+    public function is_new() {
+        return empty($this->term_id);
+    }
+
     /**
      * Delete the current term
      * @return boolean
      */
     public function delete() {
+        if ($this->is_new())
+            return TRUE;
+
         return $this->_site->_query('wp.deleteTerm', $this->taxonomy, $this->term_id);
     }
 

@@ -60,24 +60,24 @@ class Wordpress_Site {
 
     /**
      * Retrieve a taxonomy term.
-     * @param Wordpress_Term::TYPE_*|string $type
+     * @param Wordpress_Term::TYPE_*|string $taxonomy
      * @param int $id
      * @return Wordpress_Term
      */
-    public function get_term($type, $id) {
-        $term_data = $this->_query('wp.getTerm', $type, $id);
+    public function get_term($taxonomy, $id) {
+        $term_data = $this->_query('wp.getTerm', $taxonomy, $id);
 
         return new Wordpress_Term($this, $term_data);
     }
 
     /**
      * Retrieve list of terms in a taxonomy.
-     * @param Wordpress_Term::TYPE_*|string $type
+     * @param Wordpress_Term::TYPE_*|string $taxonomy
      * @param int $number
      * @param int $offset
      * @return Wordpress_Term[]
      */
-    public function get_terms($type, $number = 10, $offset = 0, $search = NULL) {
+    public function get_terms($taxonomy, $number = 10, $offset = 0, $search = NULL) {
         $filter = array(
             'number' => $number,
             'offset' => $offset,
@@ -86,7 +86,7 @@ class Wordpress_Site {
         if (isset($search))
             $filter['search'] = $search;
 
-        $response = $this->_query('wp.getTerms', $type, $filter);
+        $response = $this->_query('wp.getTerms', $taxonomy, $filter);
 
         $result = array();
         foreach ($response as $term_data) {

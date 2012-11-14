@@ -5,10 +5,10 @@
  * 
  * @property string $post_id
  * @property string $post_title
- * @property datetime $post_date
- * @property datetime $post_date_gmt
- * @property datetime $post_modified
- * @property datetime $post_modified_gmt
+ * @property int|string $post_date Unix timestamp or ISO 8601 date
+ * @property int|string $post_date_gmt Unix timestamp or ISO 8601 date
+ * @property int|string $post_modified Unix timestamp or ISO 8601 date
+ * @property int|string $post_modified_gmt Unix timestamp or ISO 8601 date
  * @property string $post_status
  * @property string $post_type
  * @property string $post_format
@@ -42,8 +42,18 @@ class Wordpress_Post extends Wordpress_Object {
     public function __construct(Wordpress_Site $site, $data = NULL) {
         parent::__construct($site, $data);
 
+        //Parse terms
         $this->terms = new Wordpress_PostTerms($this, isset($data['terms']) ? $data['terms'] : array());
         $this->_changed = array();
+
+        //Convert dates to Unix Timestamps
+        foreach (array('post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt') as $field) {
+            if (isset($data[$field])) {
+                $date = $data[$field];
+                $func = strpos($field, 'gmt') !== FALSE ? 'gmmktime' : 'mktime';
+                $this->$field = $func($date->hour, $date->minute, $date->second, $date->month, $date->day, $date->year);
+            }
+        }
     }
 
     protected function _filter($data) {
@@ -52,6 +62,27 @@ class Wordpress_Post extends Wordpress_Object {
                 throw new InvalidArgumentException('The post terms should be a Wordpress_PostTerms object');
 
             $data['terms'] = $data['terms']->serialize();
+        }
+
+        //Convert dates to IXR_Date objects, considering timezone settings
+        foreach (array('post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt') as $field) {
+            if (isset($data[$field])) {
+                $timestamp = $data[$field];
+                if (!is_numeric($timestamp))
+                    $timestamp = strtotime($timestamp);
+
+                $date = new IXR_Date($timestamp);
+                $func = strpos($field, 'gmt') !== FALSE ? 'gmdate' : 'date';
+                $date->year = $func('Y', $timestamp);
+                $date->month = $func('m', $timestamp);
+                $date->day = $func('d', $timestamp);
+                $date->hour = $func('H', $timestamp);
+                $date->minute = $func('i', $timestamp);
+                $date->second = $func('s', $timestamp);
+                $date->timezone = '';
+
+                $data[$field] = $date;
+            }
         }
 
         return parent::_filter($data);
@@ -68,7 +99,7 @@ class Wordpress_Post extends Wordpress_Object {
     public function delete() {
         if ($this->is_new())
             return TRUE;
-        
+
         return $this->_site->_query('wp.deletePost', $this->post_id);
     }
 

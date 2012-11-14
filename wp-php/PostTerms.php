@@ -10,7 +10,7 @@ class Wordpress_PostTerms {
      * @var Wordpress_Post 
      */
     private $_post;
-    
+
     /**
      *
      * @var Wordpress_Term[] 
@@ -30,12 +30,12 @@ class Wordpress_PostTerms {
     public function changed() {
         return $this->_changed;
     }
-    
+
     /**
      * Retrieves the list of all terms of this post
      * @return Wordpress_Term[]
      */
-    public function all(){
+    public function all() {
         return $this->_terms;
     }
 
@@ -113,18 +113,26 @@ class Wordpress_PostTerms {
 
             //Create the object if is new
             if ($term->is_new()) {
-                $search = $this->_post->site()->get_terms($term->taxonomy, 50, $offset, $term->name);
-                foreach ($search as $related_term) {
-                    if (strcasecmp($related_term->name, $term->name) == 0) {
-                        $term = $related_term;
-                        break;
+                //Check if the term already exists
+                $offset = 0;
+                $chunk = 50;
+                do {
+                    $search = $this->_post->site()->get_terms($term->taxonomy, $chunk, $offset, $term->name);
+                    foreach ($search as $related_term) {
+                        if (strcasecmp($related_term->name, $term->name) == 0) {
+                            $term = $related_term;
+                            break 2;
+                        }
                     }
-                }
+                    $offset+=$chunk;
+                } while (count($search) == $chunk);
+
 
                 if ($term->is_new())
                     $term->save();
             }
 
+            //Add the term to the terms array (organized by taxonomy)
             if (!isset($terms[$term->taxonomy]))
                 $terms[$term->taxonomy] = array();
             $terms[$term->taxonomy][] = $term->term_id;

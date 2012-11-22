@@ -56,12 +56,23 @@ class Wordpress_Post extends Wordpress_Object {
         }
     }
 
+    /**
+     * Load a post by its id
+     * @param mixed $id
+     */
+    public function load($id) {
+        $new_post = $this->_site->get_post($id);
+        $this->_data = $new_post->_data;
+        $this->_changed = array();
+    }
+
     protected function _filter($data) {
         if (isset($data['terms'])) {
             if (!($data['terms'] instanceof Wordpress_PostTerms))
                 throw new InvalidArgumentException('The post terms should be a Wordpress_PostTerms object');
 
-            $data['terms'] = $data['terms']->serialize();
+            $data['terms_names'] = $data['terms']->serialize();
+            unset($data['terms']);
         }
 
         //Convert dates to IXR_Date objects, considering timezone settings
@@ -115,11 +126,9 @@ class Wordpress_Post extends Wordpress_Object {
 
         $success = $this->_save('wp.newPost', 'wp.editPost', 'post_id');
 
-        if ($success && $new) {
+        if ($success) {
             //Reload object to get all the new info
-            $new_post = $this->_site->get_post($this->post_id);
-            $this->_data = $new_post->_data;
-            $this->_changed = array();
+            $this->load($this->post_id);
         }
 
         return $success;

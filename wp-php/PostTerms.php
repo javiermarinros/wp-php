@@ -105,37 +105,15 @@ class Wordpress_PostTerms {
     }
 
     public function serialize() {
-
         $terms = array();
         foreach ($this->_terms as $term) {
             if (!$term instanceof Wordpress_Term)
                 throw new InvalidArgumentException('The post terms should be an array of Wordpress_Term object');
 
-            //Create the object if is new
-            if ($term->is_new()) {
-                //Check if the term already exists
-                $offset = 0;
-                $chunk = 50;
-                do {
-                    $search = $this->_post->site()->get_terms($term->taxonomy, $chunk, $offset, $term->name);
-                    foreach ($search as $related_term) {
-                        if (strcasecmp($related_term->name, $term->name) == 0) {
-                            $term = $related_term;
-                            break 2;
-                        }
-                    }
-                    $offset+=$chunk;
-                } while (count($search) == $chunk);
-
-
-                if ($term->is_new())
-                    $term->save();
-            }
-
             //Add the term to the terms array (organized by taxonomy)
             if (!isset($terms[$term->taxonomy]))
                 $terms[$term->taxonomy] = array();
-            $terms[$term->taxonomy][] = $term->term_id;
+            $terms[$term->taxonomy][] = $term->name;
         }
         return $terms;
     }

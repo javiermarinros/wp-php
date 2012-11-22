@@ -44,7 +44,7 @@ class Wordpress_Term extends Wordpress_Object {
 
         $success = $this->_save('wp.newTerm', 'wp.editTerm', 'term_id');
 
-        if ($success && $new) {
+        if ($success) {
             //Reload object to get all the new info
             $new_term = $this->_site->get_term($this->taxonomy, $this->term_id);
             $this->_data = $new_term->_data;

@@ -27,6 +27,10 @@ class Wordpress_PostTerms {
         }
     }
 
+    /**
+     * Get a value indicating if the terms in this instance have changed
+     * @return boolean
+     */
     public function changed() {
         return $this->_changed;
     }
@@ -113,7 +117,7 @@ class Wordpress_PostTerms {
             //Add the term to the terms array (organized by taxonomy)
             if (!isset($terms[$term->taxonomy]))
                 $terms[$term->taxonomy] = array();
-            $terms[$term->taxonomy][] = $term->name;
+            $terms[$term->taxonomy][] = htmlspecialchars($term->name); //Fix for WP bug #24354 http://core.trac.wordpress.org/ticket/24354
         }
         return $terms;
     }

@@ -23,7 +23,7 @@ class Wordpress_Site {
 
     /**
      * Retrieve a post of any registered post type.
-     * @param int $id
+     * @param string $id Post ID
      * @return Wordpress_Post[]
      */
     public function get_post($id, $fields = NULL) {
